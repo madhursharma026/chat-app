@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: #222;
+        color: #fff;
+        font-family: sans-serif;
+        overflow: hidden;
+    }
+
+    input {
+        border: 1px solid #555;
+        background-color: transparent;
+        width: 100%;
+        padding: 10px;
+        border-radius: 20px;
+        color: #fff;
+    }
+
+    .bubble {
+        border-radius: 20px;
+        background-color: #444;
+        margin: 4px;
+        padding: 5px 10px;
+        display: inline-block;
+        background-color: #07c;
+        text-align: left;
+    }
+
+    .message-row.mine {
+        text-align: right;
+    }
+
+    .username {
+        text-align: right;
+    }
+
+    .overflowStyle::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+
+<body>
+
+    <form method="POST" onsubmit="return sendMessage();">
+        <h1 style="text-align: center;"><u>Chat</u></h1>
+        <input type="text" autocomplete="off" id="username" placeholder="Username Here..." required>
+        <div class="overflowStyle" style="overflow: scroll; height: 76vh; margin-top: 10px; margin-bottom: 10px;">
+            <div id="messages" style="margin-top: 10px;"></div>
+        </div>
+        <input id="message" placeholder="Your Message..." required autocomplete="off">
+        <button type="submit"
+            style="width: 100%; padding: 10px; font-size: 16px; background: #31D2F2; border: 0; border-radius: 20px; margin-top: 10px;">Send</button>
+    </form>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+
+    <script>
+        var server = "http://localhost:3000"
+        var io = io(server)
+        var username = "";
+
+        $(".overflowStyle").animate({ scrollTop: 20000000 }, "slow");
+
+        function sendMessage() {
+            username = $("#username").val();
+            var message = document.getElementById("message");
+            io.emit("new_message", {
+                message: message.value,
+                username: username
+            });
+            message.value = ""
+            $(".overflowStyle").animate({ scrollTop: 20000000 }, "slow");
+            return false;
+        }
+
+        $.ajax({
+            url: server + "/get_messages",
+            method: "GET",
+            success: function (response) {
+                console.log(response);
+                var messages = document.getElementById("messages");
+                var data = JSON.parse(response);
+                for (var a = 0; a < data.length; a++) {
+                    var newDiv = document.createElement("div");
+                    newDiv.innerHTML += `<div class="message-row mine"><div class="username bubble">Username: ${data[a].username}<br><div class="bubble">${data[a].message}</div></div></div>`;
+                    messages.appendChild(newDiv);
+                }
+            }
+        });
+
+        io.on("new_message", function (data) {
+            console.log("Server says", data)
+            var newDiv = document.createElement("div")
+            newDiv.innerHTML = `<div class="message-row mine"><div class="username bubble">Username: ${data.username}<br><div class="bubble">${data.message}</div></div></div>`;
+            var message = document.getElementById("messages");
+            message.appendChild(newDiv)
+        })
+    </script>
+</body>
+
+</html>
